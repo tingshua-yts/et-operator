@@ -31,7 +31,7 @@ func (r *TrainingJobReconciler) executeScaling(job *kaiv1alpha1.TrainingJob) err
 
 	scalerType, scalerName := getScalerName(job.Status.CurrentScaler)
 	if scalerType == "ScaleIn" {
-		scaleIn, err := getScaleIn(scalerName, r)
+		scaleIn, err := getScaleIn(scalerName, r) // 获取scale in的信息
 		if err != nil {
 			return err
 		}

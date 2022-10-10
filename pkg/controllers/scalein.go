@@ -21,6 +21,7 @@ func (r *TrainingJobReconciler) executeScaleIn(job *kaiv1alpha1.TrainingJob, sca
 	initializeJobStatus(scaleIn.GetJobStatus())
 
 	//TODO: Validate the scalein count for minSize
+	// 设置scale in应该删除的worker信息
 	err := r.setsSaleInToDelete(job, scaleIn)
 	if err != nil {
 		msg := fmt.Sprintf("%s get to delete workers name failed, error: %v", scaleIn.GetFullName(), err)
@@ -28,6 +29,7 @@ func (r *TrainingJobReconciler) executeScaleIn(job *kaiv1alpha1.TrainingJob, sca
 		return nil
 	}
 
+	// 获取更新后的worker列表
 	currentWorkers := r.workersAfterScaler(job.Status.CurrentWorkers, scaleIn)
 
 	// execute scalein script
@@ -49,6 +51,7 @@ func (r *TrainingJobReconciler) executeScaleIn(job *kaiv1alpha1.TrainingJob, sca
 			}
 		}
 	}
+	// 执行worker删除
 	if err := r.DeleteWorkers(job, toDeleteWorkers); err != nil {
 		msg := fmt.Sprintf("%s delete resource failed, error: %v", scaleIn.GetFullName(), err)
 		r.updateScalerFailed(scaleIn, job, msg)
@@ -137,6 +140,8 @@ func (r *TrainingJobReconciler) setsSaleInToDelete(job *kaiv1alpha1.TrainingJob,
 	if len(podNames) != 0 {
 		return /*filterPodNames(workers, podNames, false), */ nil
 	}
+
+	// 获取当前的所有worker
 	workers, err := r.GetWorkerPods(job)
 	if err != nil {
 		err = fmt.Errorf("get current order workers name failed: %v", err)

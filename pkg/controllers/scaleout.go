@@ -24,11 +24,12 @@ func (r *TrainingJobReconciler) executeScaleOut(job *kaiv1alpha1.TrainingJob, sc
 		r.updateScalerFailed(scaleOut, job, err.Error())
 		return err
 	}
-
+	// 生成应该scale out的worker的信息
 	if err := r.setScaleOutWorkers(job, scaleOut); err != nil {
 		return err
 	}
 
+	// 创建worker
 	err := r.ScaleOutWorkers(job, scaleOut)
 	if err != nil {
 		msg := fmt.Sprintf("%s create scaleout workers failed, error: %v", scaleOut.GetFullName(), err)
@@ -36,6 +37,7 @@ func (r *TrainingJobReconciler) executeScaleOut(job *kaiv1alpha1.TrainingJob, sc
 		return err
 	}
 
+	// 获取scale out的worker信息
 	scaleOutWorkers, err := r.getScalerOutWorkers(job, scaleOut)
 	if err != nil {
 		return err
@@ -43,6 +45,7 @@ func (r *TrainingJobReconciler) executeScaleOut(job *kaiv1alpha1.TrainingJob, sc
 
 	workerStatuses, _ := r.workerReplicasStatus(scaleOut.GetJobStatus(), scaleOutWorkers)
 
+	// 判断add 的worker是否都已经ready ，若没有都ready，则全部返回
 	if workerStatuses.Active < *scaleOut.Spec.ToAdd.Count {
 		if IsScaleOutTimeout(scaleOut) {
 			msg := fmt.Sprintf("scaleout job %s execution timeout", scaleOut.GetFullName())
@@ -51,6 +54,7 @@ func (r *TrainingJobReconciler) executeScaleOut(job *kaiv1alpha1.TrainingJob, sc
 		return NewRequeueError(fmt.Errorf("wait for workers running"))
 	}
 
+	// 若全部ready，则获取所有的worker host，并执行scale out script
 	hostWorkers := r.workersAfterScaler(job.Status.CurrentWorkers, scaleOut)
 
 	// execute scalein script

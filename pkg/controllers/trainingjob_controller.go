@@ -299,6 +299,7 @@ func (r *TrainingJobReconciler) newSteps() []Step {
 
 func (r *TrainingJobReconciler) doSteps(job *kaiv1alpha1.TrainingJob, steps []Step) error {
 	for _, step := range steps {
+		// 当前step的condition已经执行成功了，则执行下一个step
 		if hasCondition(*job.GetJobStatus(), step.JobCondition) {
 			continue
 		}
